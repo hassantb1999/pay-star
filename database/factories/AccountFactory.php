@@ -4,31 +4,31 @@ namespace Database\Factories;
 
 use App\Models\User;
 use App\Modules\Banking\Models\Account;
+use App\Modules\Banking\Models\Bank;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<Account>
+ * @extends Factory
  */
 class AccountFactory extends Factory
 {
 
     protected $model = Account::class;
+
     /**
      * Define the model's default state.
      *
      * @return array
      */
-    public function definition()
+    public function definition(): array
     {
-
-
         return [
-            'owner_id' => User::all()->random()->id,
-            'bank' => 'keshavarzi', //@todo: replace with Bank::getBanks()->random()
+            'owner_id' => User::factory(),
+            'bank' => Bank::getBanks()[rand(0, 2)],
             'description' => $this->faker->name(),
-            'account_number' => Str::random(10),
-            'shaba_number' => 'IR' . Str::random(15),
+            'credit' => rand(0, 100000),
+            'account_number' => $this->faker->numerify('#############'),
+            'shaba_number' => 'IR' . $this->faker->numerify('############'),
 
         ];
     }

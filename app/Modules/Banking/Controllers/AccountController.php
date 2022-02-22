@@ -4,35 +4,36 @@ namespace App\Modules\Banking\Controllers;
 
 use App\Models\User;
 use App\Modules\Banking\Models\Account;
+use App\Modules\Banking\Requests\StoreAccountRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 
 
 class AccountController extends BaseController
 {
-    public function index(){
-//        return auth()->user()->accounts();
-        return Account::all();
+    public function index()
+    {
+        /* @var User $user */
+        $user = auth()->user();
+        return response($user->accounts, 200);
     }
 
-    public function show($id){
+    public function show(Account $account)
+    {
 
+        if (Gate::denies('access-account', $account)) {
+            return response()->json([], 403);
+        }
 
-        $account = Account::find($id);
-        return $account ? response($account) : response(null);
+        return response($account);
     }
 
-    public function store(Request $request) {
-
-        $account = new Account();
-        $account->createAccount(
-            $request->get('owner_id'),
-            $request->get('bank'),
-            $request->get('account_number'),
-            $request->get('shaba_number'),
-            $request->get('credit'),
-            $request->get('description'),
-        );
+    public function store(StoreAccountRequest $request)
+    {
+        /* @var User $user */
+        $user = auth()->user();
+        $user->accounts()->create($request->validated());
 
         return response([
             'Response' => 'Ok',
@@ -40,12 +41,17 @@ class AccountController extends BaseController
         ], 201);
     }
 
-    public function update(Request $request,int $id) {
-        $account = Account::find($id);
+    public function update(Request $request, Account $account)
+    {
+        if (Gate::denies('access-account', $account)) {
+            return response()->json([], 403);
+        }
 
-        /* Validate description */
+        $attr = $request->validate([
+            'description' => 'required',
+        ]);
 
-        $account->description = $request->get('description');
+        $account->description = $attr['description'];
         $account->save();
 
         return response([
@@ -55,15 +61,38 @@ class AccountController extends BaseController
     }
 
 
-    public function destroy(int $id)
+    public function destroy(Account $account)
     {
-        $account = Account::find($id);
+        if (Gate::denies('access-account', $account)) {
+            return response()->json([], 403);
+        }
 
         $account->delete();
+
         return response([
             'Response' => 'Ok',
             'Message' => 'Deleted Successfully',
         ], 200);
-
     }
+
+    public function addCredit(Account $account, Request $request)
+    {
+
+        if (Gate::denies('access-account', $account)) {
+            return response()->json([], 403);
+        }
+
+        $attr = $request->validate([
+            'credit' => 'required|numeric|gt:0',
+        ]);
+
+        $account->addCredit($attr['credit']);
+
+        return response([
+            'Response' => 'Ok',
+            'Message' => 'Updated Successfully',
+        ], 200);
+    }
+
+
 }

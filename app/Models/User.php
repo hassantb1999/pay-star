@@ -3,45 +3,28 @@
 namespace App\Models;
 
 use App\Modules\Banking\Models\Account;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Modules\Banking\Models\Transaction;
+use App\Modules\Banking\Models\Transfer;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Foundation\Auth\User as Authenticate;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * App\Models\User
+ * @property int id
+ * @property string name
+ * @property string first_name
+ * @property string last_name
+ * @property string email
  *
- * @property int $id
- * @property string $name
- * @property string $email
- * @property \Illuminate\Support\Carbon|null $email_verified_at
- * @property string $password
- * @property string|null $remember_token
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection|Account[] $accounts
- * @property-read int|null $accounts_count
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection|\Illuminate\Notifications\DatabaseNotification[] $notifications
- * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection|\Laravel\Sanctum\PersonalAccessToken[] $tokens
- * @property-read int|null $tokens_count
- * @method static \Database\Factories\UserFactory factory(...$parameters)
- * @method static \Illuminate\Database\Eloquent\Builder|User newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|User newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|User query()
- * @method static \Illuminate\Database\Eloquent\Builder|User whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|User whereEmail($value)
- * @method static \Illuminate\Database\Eloquent\Builder|User whereEmailVerifiedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|User whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|User whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder|User wherePassword($value)
- * @method static \Illuminate\Database\Eloquent\Builder|User whereRememberToken($value)
- * @method static \Illuminate\Database\Eloquent\Builder|User whereUpdatedAt($value)
- * @mixin \Eloquent
+ * @property Collection accounts
+ * @property Collection transfers
+ * @property Collection transactions
  */
-class User extends Authenticatable
+class User extends Authenticate
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -52,6 +35,8 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
     ];
@@ -64,6 +49,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'laravel_through_key'
     ];
 
     /**
@@ -75,9 +61,20 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-
     public function accounts(): HasMany
     {
-        return $this->hasMany(Account::class, 'owner_id');
+        return $this->hasMany(Account::class, 'owner_id', 'id');
+    }
+
+    public function transactions(): HasManyThrough
+    {
+        return $this->hasManyThrough(Transaction::class, Account::class, 'owner_id', 'account_id');
+    }
+
+    public function transfers(): HasManyThrough
+    {
+        return $this->hasManyThrough(Transfer::class, Transaction::class, 'accounts.owner_id', 'transaction_id', 'id', 'id')
+            ->join('accounts', 'accounts.id', 'transactions.account_id');
+
     }
 }

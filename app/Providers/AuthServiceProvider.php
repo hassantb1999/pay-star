@@ -25,6 +25,14 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        Gate::define('access-account', function ($user, $account) {
+            return $user->id == $account->owner_id;
+        });
+
+        Gate::define('access-transfer', function ($user, $transfer) {
+            return $user->id == $transfer->transaction->account->owner->id;
+        });
+
         //
     }
 }

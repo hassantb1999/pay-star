@@ -3,14 +3,14 @@
 namespace App\Modules\Banking\Models;
 
 use App\Models\User;
-use Brick\Math\BigInteger;
 use Database\Factories\AccountFactory;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Carbon;
 
 
 /**
@@ -23,48 +23,50 @@ use Illuminate\Support\Carbon;
  * @property string|null $description
  * @property string $account_number
  * @property string $shaba_number
- * @property string|null $deleted_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property-read User $owner
- * @method static \Database\Factories\AccountFactory factory(...$parameters)
- * @method static Builder|Account newModelQuery()
- * @method static Builder|Account newQuery()
- * @method static Builder|Account query()
- * @method static Builder|Account whereAccountNumber($value)
- * @method static Builder|Account whereBank($value)
- * @method static Builder|Account whereCreatedAt($value)
- * @method static Builder|Account whereCredit($value)
- * @method static Builder|Account whereDeletedAt($value)
- * @method static Builder|Account whereDescription($value)
- * @method static Builder|Account whereId($value)
- * @method static Builder|Account whereOwnerId($value)
- * @method static Builder|Account whereShabaNumber($value)
- * @method static Builder|Account whereUpdatedAt($value)
- * @mixin Model
+ *
+ * @property Collection $transfers
+ * @property Collection $transactions
+ *
+ * @property User $owner
  */
-class Account extends Model {
-
+class Account extends Model
+{
     use HasFactory, SoftDeletes;
+
+    protected $guarded = [];
+    protected $hidden = [
+        'laravel_through_key'
+    ];
 
     protected static function newFactory(): AccountFactory
     {
         return AccountFactory::new();
     }
 
+    public function addCredit($amount)
+    {
+        $this->credit += $amount;
+        $this->save();
+    }
 
-    public function createAccount($ownerId, $bank,  $accountNumber, $shabaNumber,$credit = 0, $description=null){
-        $this->owner_id = $ownerId;
-        $this->bank = $bank;
-        $this->credit = $credit;
-        $this->description = $description ?? $bank . ' - ' . $accountNumber;
-        $this->account_number = $accountNumber;
-        $this->shaba_number = $shabaNumber;
+    public function addDebit($amount)
+    {
+        $this->credit -= $amount;
         $this->save();
     }
 
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function transfers(): HasManyThrough
+    {
+        return $this->hasManyThrough(Transfer::class, Transaction::class);
     }
 }

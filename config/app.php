@@ -194,4 +194,6 @@ return [
         // ...
     ])->toArray(),
 
+    
+    'fake_oak' => env('FAKE_OAK', true),
 ];

@@ -37,8 +37,8 @@ return new class extends Migration
     public function down()
     {
         Schema::table('accounts', function(Blueprint $table) {
-            $table->dropForeign('accounts_user_id_foreign');
-            $table->dropIndex('accounts_user_id_index');
+            $table->dropForeign('accounts_owner_id_foreign');
+            $table->dropIndex('accounts_owner_id_index');
         });
 
         Schema::dropIfExists('accounts');
