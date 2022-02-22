@@ -46,9 +46,9 @@ class Transfer extends Model
 
     public $timestamps = false;
 
-    private int $accountId;
-    private BigInteger $amount;
-    private string $status;
+    private $accountId;
+    private $amount;
+    private $status;
 
     protected static function newFactory(): TransferFactory
     {
